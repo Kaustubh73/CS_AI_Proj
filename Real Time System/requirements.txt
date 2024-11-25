@@ -1,0 +1,9 @@
+redis
+fastapi
+uvicorn
+onnxruntime
+numpy
+pandas
+scikit-learn
+skl2onnx
+onnx
