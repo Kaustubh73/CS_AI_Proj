@@ -8,11 +8,13 @@ def send_request_to_queue():
     test_request = {
         
         'method': 'GET',
-        'url': 'http://localhost:8080/tienda1/publico/anadir.jsp?id=2&nombre=Jam%F3n+Ib%E9rico&precio=85&cantidad=%27%3B+DROP+TABLE+usuarios%3B+SELECT+*+FROM+datos+WHERE+nombre+LIKE+%27%25&B1=A%F1adir+al+carrito',
+        'url': 'http://localhost:8080/tienda1/publico/anadir.jsp?id=1&nombre=Jam%F3n+Ib%E9rico&precio=39&cantidad=41&B1=A%F1adir+al+carrito',
         'headers': {
+            'IP': '45245',
             'Content-Length': '0',
-            'Cookie': 'JSESSIONID=B92A8B48B9008CD29F622A994E0F650D',
+            'Cookie': 'JSESSIONID=54E25FF4B7F0E4E855B112F882E9EEA5',
             'User-Agent': 'Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.8 (like Gecko)',
+            'Target-Class': '0'
         },
         'payload': '',
     }

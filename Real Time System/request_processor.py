@@ -34,7 +34,8 @@ class RequestProcessor:
             'url': request_data.get('url', ''),
             'cookie': request_data.get('headers', {}).get('Cookie', ''),
             'content_length': request_data.get('headers', {}).get('Content-Length', 0),
-            'payload': request_data.get('payload', '')
+            'payload': request_data.get('payload', ''),
+            'class': request_data.get('headers', {}).get('Target-Class', 0)
         }
         session_id = parsed_request['cookie']
         print("SESSION ID",session_id)
@@ -71,7 +72,7 @@ class RequestProcessor:
         if predicted_class == 1:  # Assuming 1 is the anomalous class
             self._trigger_alert(session_id, features)
         
-        return predicted_class, features
+        return predicted_class, features, parsed_request['class']
 
     def _predict(self, input_data):
         """

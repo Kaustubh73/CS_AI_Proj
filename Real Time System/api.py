@@ -6,7 +6,7 @@ from config import Config
 app = FastAPI()
 processor = RequestProcessor(model_path=Config.MODEL_PATH)
 
-@app.post("/analyze")
+@app.post("/alert")
 async def analyze_request(request: Request):
     body = await request.body()
     raw_request = {
@@ -25,5 +25,6 @@ async def analyze_request(request: Request):
         'features': features
     }
 
+# Send 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
