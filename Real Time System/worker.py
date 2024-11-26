@@ -3,6 +3,7 @@ import redis
 import json
 import time
 from request_processor import RequestProcessor
+
 from config import Config
 import requests
 class RedisWorker:
@@ -14,7 +15,10 @@ class RedisWorker:
             decode_responses=True
         )
         print(f"Redis Worker initialized. Listening on queue: {Config.QUEUE_NAME}")
-        
+    
+    
+    # Add the ipaddress here
+    
     # def send_alert(result):
     #     cookie = result[1]['cookie']
     #     print(f"ALERT: Suspicious request detected for session ID: {cookie}")
@@ -24,6 +28,19 @@ class RedisWorker:
     #     # You can replace this with your own alerting mechanism
     #     requests.post("http://localhost:3000/alert", json=cookie)
         
+    # Function to detect DDOS, needs to keep running in the background
+    def DDOS_detect(self):
+        # Function on the ipaddress, and the frequency of the requests
+        
+        # Input the csv
+        
+        # Make the calculations on the csv
+        
+        
+        # Return the IP addresses to block
+        return 0
+    
+        
     def start(self):
         while True:
             try:
@@ -31,6 +48,8 @@ class RedisWorker:
                 _, request_data = self.redis_client.brpop(Config.QUEUE_NAME)
                 
                 try:
+                    # Run the DDOS checker
+                    
                     parsed_request = json.loads(request_data)
                     result = self.processor.process_request(parsed_request)
                     print("Processed request:", result)
