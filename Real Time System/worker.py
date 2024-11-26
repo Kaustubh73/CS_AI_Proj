@@ -3,6 +3,8 @@ import redis
 import json
 import time
 from request_processor import RequestProcessor
+import pandas as pd
+from datetime import datetime, timedelta
 
 from config import Config
 import requests
@@ -14,32 +16,71 @@ class RedisWorker:
             port=Config.REDIS_PORT,
             decode_responses=True
         )
+        
+        self.ddos_window = 2
+        self.csv_path = "results.csv"
+        self.ddos_request_threshold = 5
+        
         print(f"Redis Worker initialized. Listening on queue: {Config.QUEUE_NAME}")
     
     
     # Add the ipaddress here
     
-    # def send_alert(result):
-    #     cookie = result[1]['cookie']
-    #     print(f"ALERT: Suspicious request detected for session ID: {cookie}")
-    #     # Convert to JSON
-    #     cookie = json.dumps(cookie)
-    #     # Send it to local host port 3000
-    #     # You can replace this with your own alerting mechanism
-    #     requests.post("http://localhost:3000/alert", json=cookie)
+    def send_alert(result, ddos_attack = False, ddos_ip = None):
+        # cookie = result[1]['cookie']
+        # print(f"ALERT: Suspicious request detected for session ID: {cookie}")
+        # # Convert to JSON
+        # cookie = json.dumps(cookie)
+        # # Send it to local host port 3000
+        # # You can replace this with your own alerting mechanism
+        # requests.post("http://localhost:3000/alert", json=cookie)
         
-    # Function to detect DDOS, needs to keep running in the background
-    def DDOS_detect(self):
-        # Function on the ipaddress, and the frequency of the requests
+        # Extract the session cookie
+        cookie = result[1]['cookie']
+        print(f"ALERT: Suspicious request detected for session ID: {cookie}")
         
-        # Input the csv
+        # Create the JSON payload
+        alert_payload = {"cookie": cookie}
         
-        # Make the calculations on the csv
+        # Add the ddos_ip if the attack is flagged
+        if ddos_attack:
+            alert_payload["ddos_ip"] = ddos_ip
+        
+        # Convert to JSON
+        alert_payload_json = json.dumps(alert_payload)
+        
+        # Send it to localhost port 3000
+        response = requests.post("http://localhost:3000/alert", json=alert_payload_json)
+        
+        if response.status_code == 200:
+            print("Alert sent successfully!")
+        else:
+            print(f"Failed to send alert: {response.status_code}, {response.text}")
         
         
-        # Return the IP addresses to block
-        return 0
-    
+    # Function to detect DDOS
+    def DDOS_detect(self, parsed_request):
+        
+        ddos_attack = False
+        ddos_ip = None
+        
+        df = pd.read_csv(self.csv_path, parse_dates=["timestamp"])
+        
+        current_time = datetime.now()
+        start_time = current_time - timedelta(seconds=self.time_window)
+        
+        recent_requests = df[(df["timestamp"] >= start_time) & (df["timestamp"] <= current_time)]
+        
+        # Checking for the matched ip addresses with the new requests
+        ip_matches = recent_requests[recent_requests["features"].apply(lambda x: x["IP"] == parsed_request["IP"])]
+
+        ip_counts = ip_matches.shape[0]
+        
+        if ip_counts > self.ddos_request_threshold:
+            ddos_attack = True
+            ddos_ip = parsed_request["IP"]
+
+        return ddos_attack, ddos_ip
         
     def start(self):
         while True:
@@ -47,16 +88,21 @@ class RedisWorker:
                 # Block and wait for requests from Redis queue
                 _, request_data = self.redis_client.brpop(Config.QUEUE_NAME)
                 
-                try:
-                    # Run the DDOS checker
-                    
+                try:              
                     parsed_request = json.loads(request_data)
+                    
                     result = self.processor.process_request(parsed_request)
+                    
+                    features = result[1]
+                    
+                    ddos_attack, ddos_ip = self.DDOS_detect(features)
+                    
                     print("Processed request:", result)
-                    # If it is a suspicious request, send an alert
-                    # if result[0] == 1:
-                        # send_alert(result)
-                        # print("ALERT: Suspicious request detected.")
+                    # If it is a suspicious request, send an alert (DOS attack or anomalous request)
+                    
+                    if result[0] == 1 or ddos_attack == True:
+                        self.send_alert(result, ddos_attack, ddos_ip)
+                        print("ALERT: Suspicious request detected.")
                     # Analyze 
                     # Optionally, you can store results or send alerts
                     self._handle_result(result)
@@ -98,7 +144,7 @@ class RedisWorker:
         with open(Config.RESULT_CSV, 'a') as f:
             # time stamp in real time - date and time
             timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-            f.write(f"{timestamp}, {features}, {predicted_class}, {target_class}, {predicted_prob}\n")        
+            f.write(f"{timestamp}, {features}, {predicted_class}, {target_class}, {predicted_prob}\n")
         
 
 def main():
