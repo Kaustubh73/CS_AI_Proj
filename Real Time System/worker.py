@@ -62,7 +62,7 @@ class RedisWorker:
         - Send alerts
         - Store in a database
         """
-        predicted_class, features, target_class = result
+        predicted_class, features, target_class, predicted_prob = result
         if predicted_class == 1:  # Suspicious request
             print(f"ALERT: Suspicious request detected.")
             # Add your alert mechanism here (e.g., send email, log to file, etc.)
@@ -70,11 +70,16 @@ class RedisWorker:
         # If csv file doesn't exist, create it and write the header
         if not os.path.exists(Config.RESULT_CSV):
             with open(Config.RESULT_CSV, 'w') as f:
-                f.write("timestamp, features, predicted_class, target_class\n")
+                f.write("timestamp, features, predicted_class, target_class, predicted_prob\n")
+        
+        # If csv file is empty, write the header
+        if os.stat(Config.RESULT_CSV).st_size == 0:
+            with open(Config.RESULT_CSV, 'a') as f:
+                f.write("timestamp, features, predicted_class, target_class, predicted_prob\n")
         with open(Config.RESULT_CSV, 'a') as f:
             # time stamp in real time - date and time
             timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-            f.write(f"{timestamp}, {features}, {predicted_class}, {target_class}\n")        
+            f.write(f"{timestamp}, {features}, {predicted_class}, {target_class}, {predicted_prob}\n")        
         
 
 def main():

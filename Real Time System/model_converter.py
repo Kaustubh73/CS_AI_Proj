@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 import pandas as pd
 
-def convert_random_forest_to_onnx(model, features, output_path='random_forest_model.onnx'):
+def convert_random_forest_to_onnx(model, features, output_path='random_forest_model2.onnx'):
     """
     Convert a Random Forest Classifier to ONNX format
     
@@ -45,23 +45,27 @@ def verify_onnx_model(onnx_model, X_test):
     - X_test: Test features
     
     Returns:
-    - predictions: ONNX model predictions
+    - predictions: ONNX model predicted classes
+    - probabilities: ONNX model predicted probabilities for each class
     """
     # Create ONNX Runtime inference session
     sess = onnxruntime.InferenceSession(onnx_model.SerializeToString())
     
     # Prepare input
     input_name = sess.get_inputs()[0].name
-    input_type = sess.get_inputs()[0].type
     
     # Convert input to float32
     X_test_float = X_test.astype(np.float32)
     
     # Run inference
     input_dict = {input_name: X_test_float}
-    predictions = sess.run(None, input_dict)
+    outputs = sess.run(None, input_dict)
     
-    return predictions
+    # The first output is predicted classes, the second is probabilities
+    predictions = outputs[0]  # Predicted class labels
+    probabilities = outputs[1]  # Predicted probabilities
+    print(probabilities[0])
+    return predictions, probabilities
 
 # Example usage script
 def main():
@@ -81,26 +85,35 @@ def main():
     print("Data split")
     # Train Random Forest model
     print("Training model")
-    rf_model = RandomForestClassifier(random_state=42)
-    rf_model.fit(X_train, y_train)
+    # rf_model = RandomForestClassifier(random_state=42)
+    # rf_model.fit(X_train, y_train)
     print("Model trained")
     # Convert to ONNX
     print("Converting model")
-    onnx_model = convert_random_forest_to_onnx(
-        rf_model, 
-        features,     # have 0.2 of the data as test set
+    # onnx_model = convert_random_forest_to_onnx(
+    #     rf_model, 
+    #     features,     # have 0.2 of the data as test set
 
-        output_path='random_forest_hijacking_model.onnx'
-    )
+    #     output_path='random_forest_hijacking_model.onnx'
+    # )
+    # Load ONNX model
+    onnx_model = onnx.load("random_forest_hijacking_model.onnx")
     print("Model converted")
     # Verify model conversion
     print("Verifying model")
-    onnx_predictions = verify_onnx_model(onnx_model, X_test.values)
+    onnx_predictions, onnx_probabilities = verify_onnx_model(onnx_model, X_test.values)
+    
     print("Model verified")
-    # Compare predictions
-    sklearn_predictions = rf_model.predict(X_test)
-    print("Prediction match:", np.array_equal(sklearn_predictions, onnx_predictions[0]))
 
+    # Compare predictions
+    # sklearn_predictions = rf_model.predict(X_test)
+    # sklearn_probabilities = rf_model.predict_proba(X_test)
+
+    # print("Prediction match:", np.array_equal(sklearn_predictions, onnx_predictions))
+    # print("Probability match:", np.allclose(sklearn_probabilities, onnx_probabilities, atol=1e-6))
+    print("Onnx Predictions",onnx_predictions)
+    print("Onnx Probabilities",onnx_probabilities)
+    # print("Sklearn Probabilities",sklearn_probabilities)
 if __name__ == "__main__":
     main()
 

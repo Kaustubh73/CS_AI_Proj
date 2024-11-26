@@ -35,7 +35,8 @@ class RequestProcessor:
             'cookie': request_data.get('headers', {}).get('Cookie', ''),
             'content_length': request_data.get('headers', {}).get('Content-Length', 0),
             'payload': request_data.get('payload', ''),
-            'class': request_data.get('headers', {}).get('Target-Class', 0)
+            'class': request_data.get('headers', {}).get('Target-Class', 0),
+            'ip': request_data.get('headers', {}).get('IP', ''),
         }
         session_id = parsed_request['cookie']
         print("SESSION ID",session_id)
@@ -65,14 +66,15 @@ class RequestProcessor:
         input_data = numeric_features.reshape(1, -1)
         print("INPUT DATA",input_data)
         # Make prediction using ONNX Runtime
-        predicted_class = self._predict(input_data)
+        predicted_class, predicted_prob = self._predict(input_data)
         # Get prediction class and probability
-        
+        print("PREDICTED CLASS",predicted_class)
+        print("PREDICTED PROB",predicted_prob)
         # Handle alerts if necessary
-        if predicted_class == 1:  # Assuming 1 is the anomalous class
+        if predicted_class > Config.ALERT_THRESHOLD:  # Assuming 1 is the anomalous class
             self._trigger_alert(session_id, features)
         
-        return predicted_class, features, parsed_request['class']
+        return predicted_class, features, parsed_request['class'], predicted_prob
 
     def _predict(self, input_data):
         """
@@ -87,13 +89,16 @@ class RequestProcessor:
         print(self.output_name)
         # Run model inference
         raw_prediction = self.model.run(
-            [self.output_name],
+            None,
             {self.input_name: input_data}
         )
         print("RAW PREDICTION",raw_prediction)
         # Get predicted class and probabilities
-        predicted_class = raw_prediction[0]        
-        return predicted_class
+        predicted_class = raw_prediction[0][0]
+        # Probability of predicted class
+        probabilities = raw_prediction[1][0][predicted_class]
+        
+        return predicted_class, probabilities
     
     def _clean_old_data(self, session_id):
         current_time = datetime.now()

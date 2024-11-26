@@ -8,7 +8,7 @@ class FeatureExtractor:
         self.feature_names = [
             'Method', 'URL', 'Cookie', 'ContentLen', 'Payload', 'ReqLen', 'ArgLen', 'NumArgs', 'NumDigitsArgs', 
             'PathLen', 'NumLettersArgs', 'NumLettersPath', 
-            'NumSpecialCharsPath', 'MaxByteValReq', 'Content_present'
+            'NumSpecialCharsPath', 'MaxByteValReq', 'Content_present', 'IP'
         ]
 
     def extract_features(self, request_data, historical_data):
@@ -38,7 +38,7 @@ class FeatureExtractor:
         features = {name: None for name in self.feature_names}
         url = request_data['url']
         payload = request_data['payload'] if request_data['payload'] else ''
-        
+        ip = request_data['ip']
         if '?' in url:
             url, url_payload = url.split('?', 1)
             payload = payload + '&' + url_payload if payload else url_payload
@@ -84,7 +84,8 @@ class FeatureExtractor:
             'NumLettersPath': number_of_letter_chars_in_path,
             'NumSpecialCharsPath': number_of_special_chars_in_path,
             'MaxByteValReq': max_byte_value_in_request,
-            'Content_present': content_present
+            'Content_present': content_present,
+            'IP': ip
         })
 
         # Add Content_present feature
