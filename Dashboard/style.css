@@ -1,0 +1,331 @@
+/* Resetting base styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Global styles */
+  body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f7f9fc;
+    color: #333;
+    line-height: 1.6;
+  }
+  
+  /* Main container */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px;
+  }
+  
+  /* Header styles */
+  header {
+    background-color: #5c6bc0;
+    color: #fff;
+    padding: 20px;
+    margin-bottom: 30px;
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  
+  header h1 {
+    margin-bottom: 10px;
+    font-size: 2.2rem;
+  }
+  
+  /* Navigation styles */
+  nav ul {
+    list-style-type: none;
+    display: flex;
+    justify-content: center;
+  }
+  
+  nav li {
+    margin-right: 40px;
+  }
+  
+  nav button {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 12px 20px;
+    border-radius: 30px;
+    transition: all 0.3s ease;
+  }
+  
+  nav button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Tab content area */
+  .dashboard-content,
+  .configuration-content,
+  .users-content,
+  .audit-log-content {
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+  
+  /* Hide elements */
+  .hidden {
+    display: none;
+  }
+  
+  /* Dashboard styles */
+  .dashboard-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    gap: 20px;
+  }
+  
+  .dashboard-item {
+    flex: 1;
+    background-color: #e3f2fd;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .dashboard-item:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  }
+  
+  .dashboard-item h3 {
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+  }
+  
+  /* Table styles */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 30px;
+  }
+  
+  th, td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 2px solid #ddd;
+  }
+  
+  th {
+    background-color: #e1f5fe;
+    font-weight: bold;
+  }
+  
+  tr:nth-child(even) {
+    background-color: #fafafa;
+  }
+  
+  tr:hover {
+    background-color: #f1f8e9;
+  }
+  
+  /* Bar chart styles */
+  .bar-container {
+    width: 100%;
+    height: 30px;
+    background-color: #f2f2f2;
+    border-radius: 15px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+  
+  .bar {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  }
+  
+  .bar.low {
+    background-color: #f44336;
+  }
+  
+  .bar.medium {
+    background-color: #ff9800;
+  }
+  
+  .bar.high {
+    background-color: #4caf50;
+  }
+  
+  /* Input fields and forms */
+  input[type="number"], input[type="text"] {
+    padding: 12px 20px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    width: 100%;
+    margin-top: 10px;
+  }
+  
+  input[type="number"]:focus, input[type="text"]:focus {
+    border-color: #5c6bc0;
+    outline: none;
+    box-shadow: 0 0 5px rgba(92, 107, 192, 0.5);
+  }
+  
+  /* Button styles for forms */
+  button[type="submit"] {
+    padding: 16px 32px;
+    font-size: 18px;
+    border-radius: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  button[type="submit"]:hover {
+    background-color: #0056b3;
+  }
+  
+  /* Additional spacing between configuration items */
+  .configuration-item {
+    margin-bottom: 20px;
+  }
+  
+  td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 2px solid #ddd;
+  }
+  
+  .positive {
+    color: green;
+  }
+  
+  .false-positive {
+    color: red;
+  }
+  
+  #recentAlertsTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    max-height: 100px;
+    overflow-y: auto;
+  }
+  
+  #recentAlertsTable th,
+  #recentAlertsTable td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  #recentAlertsTable th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+  
+  #recentAlertsTable td.positive {
+    color: green;
+  }
+  
+  #recentAlertsTable td.false-positive {
+    color: red;
+  }
+  
+  #recentAlertsTable td.payload {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: help;
+  }
+  
+  #recentAlertsTable td.payload:hover::after {
+    content: attr(data-full-payload);
+    position: absolute;
+    background-color: #333;
+    color: #fff;
+    padding: 5px;
+    border-radius: 5px;
+    font-size: 12px;
+    z-index: 1;
+    white-space: normal;
+    width: 300px;
+  }
+
+  /* Additional styles for the Configuration section */
+#alertThresholdForm {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 20px;
+  }
+  
+  #alertThresholdForm input[type="number"] {
+    width: 100%;
+  }
+  
+  #alertThresholdForm button[type="submit"] {
+    grid-column: 1 / 3;
+    justify-self: center;
+  }
+  
+  /* Additional styles for the Recent Alerts table */
+  #recentAlertsTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  
+  #recentAlertsTable th,
+  #recentAlertsTable td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  #recentAlertsTable th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+  
+  #recentAlertsTable td.positive {
+    color: green;
+  }
+  
+  #recentAlertsTable td.false-positive {
+    color: red;
+  }
+  
+  #recentAlertsTable td.payload {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: help;
+  }
+  
+  #recentAlertsTable td.payload:hover::after {
+    content: attr(data-full-payload);
+    position: absolute;
+    background-color: #333;
+    color: #fff;
+    padding: 5px;
+    border-radius: 5px;
+    font-size: 12px;
+    z-index: 1;
+    white-space: normal;
+    width: 300px;
+  }
