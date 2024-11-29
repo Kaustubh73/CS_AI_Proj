@@ -39,37 +39,37 @@ class RequestProcessor:
             'ip': request_data.get('headers', {}).get('IP', ''),
         }
         session_id = parsed_request['cookie']
-        print("SESSION ID",session_id)
+        # print("SESSION ID",session_id)
         if session_id.startswith('JSESSIONID='):
             session_id = session_id[11:]
         # Get historical data for the session
-        print("SESSION WINDOWS",self.session_windows)
+        # print("SESSION WINDOWS",self.session_windows)
         if session_id not in self.session_windows:
             self.session_windows[session_id] = []
         
         # Update session window
-        print("updating session window")
+        # print("updating session window")
         self.session_windows[session_id].append(parsed_request)
-        print("Clean old data")
+        # print("Clean old data")
         self._clean_old_data(session_id)
-        print("Cleaned old data")
+        # print("Cleaned old data")
 
         # Extract features
         features = self.feature_extractor.extract_features(parsed_request,self.session_windows[session_id][:-1])
-        print("FEATURES",features)
+        # print("FEATURES",features)
         # Get numeric features for model prediction
         numeric_features = self.feature_extractor.get_numeric_features(features)
-        print("NUMERIC FEATURES",numeric_features)
+        # print("NUMERIC FEATURES",numeric_features)
         # session_id = features['Cookie']
         
         # Reshape for ONNX model input (add batch dimension)
         input_data = numeric_features.reshape(1, -1)
-        print("INPUT DATA",input_data)
+        # print("INPUT DATA",input_data)
         # Make prediction using ONNX Runtime
         predicted_class, predicted_prob = self._predict(input_data)
         # Get prediction class and probability
-        print("PREDICTED CLASS",predicted_class)
-        print("PREDICTED PROB",predicted_prob)
+        # print("PREDICTED CLASS",predicted_class)
+        # print("PREDICTED PROB",predicted_prob)
         # Handle alerts if necessary
         if predicted_class > Config.ALERT_THRESHOLD:  # Assuming 1 is the anomalous class
             self._trigger_alert(session_id, features)
@@ -85,14 +85,14 @@ class RequestProcessor:
         Returns:
             Prediction results
         """
-        print("INPUT DATA",input_data)
-        print(self.output_name)
+        # print("INPUT DATA",input_data)
+        # print(self.output_name)
         # Run model inference
         raw_prediction = self.model.run(
             None,
             {self.input_name: input_data}
         )
-        print("RAW PREDICTION",raw_prediction)
+        # print("RAW PREDICTION",raw_prediction)
         # Get predicted class and probabilities
         predicted_class = raw_prediction[0][0]
         # Probability of predicted class
@@ -102,17 +102,17 @@ class RequestProcessor:
     
     def _clean_old_data(self, session_id):
         current_time = datetime.now()
-        print("CLEANING OLD DATA")
+        # print("CLEANING OLD DATA")
         window = self.session_windows[session_id]
         
         # Remove data older than WINDOW_TIME
         cutoff_time = current_time - timedelta(seconds=Config.WINDOW_TIME)
-        print("CUTOFF TIME",cutoff_time)
+        # print("CUTOFF TIME",cutoff_time)
         self.session_windows[session_id] = [
             req for req in window
             if datetime.fromisoformat(req['timestamp']) > cutoff_time
         ]
-        print("CLEANED OLD DATA")
+        # print("CLEANED OLD DATA")
 
     def _trigger_alert(self, session_id, request_data):
         alert = {

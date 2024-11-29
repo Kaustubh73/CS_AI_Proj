@@ -20,13 +20,13 @@ class RedisWorker:
         self.ddos_window = 2
         self.csv_path = "results.csv"
         self.ddos_request_threshold = 5
-        
+        # self.time_window = 10
         print(f"Redis Worker initialized. Listening on queue: {Config.QUEUE_NAME}")
     
     
     # Add the ipaddress here
     
-    def send_alert(result, ddos_attack = False, ddos_ip = None):
+    def send_alert(self, result, ddos_attack = False, ddos_ip = None):
         # cookie = result[1]['cookie']
         # print(f"ALERT: Suspicious request detected for session ID: {cookie}")
         # # Convert to JSON
@@ -36,7 +36,7 @@ class RedisWorker:
         # requests.post("http://localhost:3000/alert", json=cookie)
         
         # Extract the session cookie
-        cookie = result[1]['cookie']
+        cookie = result
         print(f"ALERT: Suspicious request detected for session ID: {cookie}")
         
         # Create the JSON payload
@@ -63,26 +63,51 @@ class RedisWorker:
         
         ddos_attack = False
         ddos_ip = None
-        
-        df = pd.read_csv(self.csv_path, parse_dates=["timestamp"])
-        
+        try:
+            df = pd.read_csv(self.csv_path)
+        except:
+            return ddos_attack, ddos_ip
+        # print(df.columns)
+        # print(df['features'].iloc[0])
         current_time = datetime.now()
-        start_time = current_time - timedelta(seconds=self.time_window)
-        
+        start_time = current_time - timedelta(seconds=self.ddos_window)
+        start_time = start_time.strftime("%Y-%m-%d %H:%M:%S")
+        # print(start_time)
+        # print(current_time)
+        # Get the time only 
+        # start_time = start_time.time()
+        # current_time = current_time.time()
+        # print(start_time)
+        # print(current_time)
+        current_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+        print(f"Current Time: {current_time}")
+        print(f"Start Time: {start_time}")
+        # print(df['timestamp'].iloc[0])
+        # exit()
+        # print((df["timestamp"] > start_time) & (df["timestamp"] < current_time))
         recent_requests = df[(df["timestamp"] >= start_time) & (df["timestamp"] <= current_time)]
-        
-        # Checking for the matched ip addresses with the new requests
-        ip_matches = recent_requests[recent_requests["features"].apply(lambda x: x["IP"] == parsed_request["IP"])]
 
-        ip_counts = ip_matches.shape[0]
+        # Checking for the matched ip addresses with the new requests
+        if recent_requests.shape[0] == 0:
+            print("No recent requests found.")
+            return ddos_attack, ddos_ip
+        print(len(recent_requests), "not empty")
+        # Check if ip address is in the recent requests
+        # Convert the IP to string
+        parsed_request["IP"] = str(parsed_request["IP"])
+        recent_requests["IP"] = recent_requests["IP"].astype(str)
+        ip_matches = recent_requests[recent_requests["IP"] == parsed_request["IP"]]
         
+        ip_counts = ip_matches.shape[0]
+        print(f"IP Counts: {ip_counts}")
         if ip_counts > self.ddos_request_threshold:
             ddos_attack = True
             ddos_ip = parsed_request["IP"]
-
+        print(f"IP: {parsed_request['IP']} has made {ip_counts} requests in the last {self.ddos_window} seconds.")
         return ddos_attack, ddos_ip
         
     def start(self):
+        i = 0
         while True:
             try:
                 # Block and wait for requests from Redis queue
@@ -90,18 +115,24 @@ class RedisWorker:
                 
                 try:              
                     parsed_request = json.loads(request_data)
-                    
+
+                    i += 1
+                    print(f"{i} times")
+
                     result = self.processor.process_request(parsed_request)
                     
                     features = result[1]
                     
                     ddos_attack, ddos_ip = self.DDOS_detect(features)
-                    
+                    print(f"DDOS Attack: {ddos_attack}")
+                    print(f"DDOS IP: {ddos_ip}")
                     print("Processed request:", result)
                     # If it is a suspicious request, send an alert (DOS attack or anomalous request)
                     
                     if result[0] == 1 or ddos_attack == True:
-                        self.send_alert(result, ddos_attack, ddos_ip)
+                        print(result[1], ddos_attack, ddos_ip)
+                        self.send_alert(result[1]['Cookie'], ddos_attack, ddos_ip)
+                        exit()
                         print("ALERT: Suspicious request detected.")
                     # Analyze 
                     # Optionally, you can store results or send alerts
@@ -133,19 +164,18 @@ class RedisWorker:
             # Add your alert mechanism here (e.g., send email, log to file, etc.)
         # Store features and result in a csv file
         # If csv file doesn't exist, create it and write the header
-        if not os.path.exists(Config.RESULT_CSV):
-            with open(Config.RESULT_CSV, 'w') as f:
-                f.write("timestamp, features, predicted_class, target_class, predicted_prob\n")
+        # Add timestamp, predicted_class, target_class, and predicted_prob to the features dict
+        features['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
+        features['predicted_class'] = predicted_class
+        features['target_class'] = target_class
+        features['predicted_prob'] = predicted_prob
         
-        # If csv file is empty, write the header
-        if os.stat(Config.RESULT_CSV).st_size == 0:
-            with open(Config.RESULT_CSV, 'a') as f:
-                f.write("timestamp, features, predicted_class, target_class, predicted_prob\n")
-        with open(Config.RESULT_CSV, 'a') as f:
-            # time stamp in real time - date and time
-            timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-            f.write(f"{timestamp}, {features}, {predicted_class}, {target_class}, {predicted_prob}\n")
-        
+        # Append to the csv file
+        df = pd.DataFrame([features])
+        if not os.path.exists(self.csv_path):
+            df.to_csv(self.csv_path, index=False)
+        else:
+            df.to_csv(self.csv_path, mode='a', header=False, index=False)        
 
 def main():
     worker = RedisWorker(model_path=Config.MODEL_PATH)
