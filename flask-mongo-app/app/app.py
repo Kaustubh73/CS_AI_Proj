@@ -3,6 +3,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 import bcrypt
 import threading
+import redis
 
 app = Flask(__name__)
 app.secret_key = 'S3CR37_key222751'
@@ -13,32 +14,28 @@ users_collection = db.users
 notes_collection = db.notes
 
 
-
-LOGGING_SERVER_URL = "http://127.0.0.1:5001/log"
+#LOGGING_SERVER_URL = "http://127.0.0.1:5001/log"
+redis_client = redis.Redis(host='localhost', port=6379, decode_responses=True)
+QUEUE_NAME = 'request_queue'
 
 def forward_request_async(data):
     try:
-        requests.post(LOGGING_SERVER_URL, json=data, timeout=2)
-    except Exception as e:
-        app.logger.error(f"Error forwarding request: {e}")
-
-@app.before_request
-def forward_request():
-    if request.endpoint != 'log':  # Avoid forwarding logging server's own requests
-        data = {
-            "headers": dict(request.headers),
-            "path": request.path,
-            "method": request.method,
-            "args": request.args.to_dict(),
-            "form": request.form.to_dict(),
-            "json": request.get_json(silent=True),
-            "remote_addr": request.remote_addr
+        redis_request = {
+            'method': data['method'],
+            'url': request.base_url,  
+            'headers': {
+                'IP': request.remote_addr,
+                'Content-Length': data['headers'].get('Content-Length', '0'),
+                'Cookie': data['headers'].get('Cookie', ''),
+                'User-Agent': data['headers'].get('User-Agent', ''),
+                'Target-Class': '0' # Change this
+            },
+            'payload': data['form'] or '' # Change this  
         }
-        thread = threading.Thread(target=forward_request_async, args=(data,))
-        thread.start()  # Run the forwarding task in the background
-
-
-
+        redis_client.lpush(QUEUE_NAME, json.dumps(redis_request))  
+        # requests.post(LOGGING_SERVER_URL, json=redis_request, timeout=2)
+    except Exception as e:
+        app.logger.error(f"Error pushing request to Redis: {e}")
 
 
 @app.route('/')
@@ -112,8 +109,6 @@ def edit_note(note_id):
             )
         return redirect(url_for('notes'))
     return redirect(url_for('login'))
-
-
 
 @app.route('/logout')
 def logout():
