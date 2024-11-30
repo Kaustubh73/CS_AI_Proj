@@ -3,3 +3,4 @@ pymongo==4.10.1
 gunicorn==23.0.0
 bcrypt==4.0.1
 redis==5.2.0
+requests==2.31.0
