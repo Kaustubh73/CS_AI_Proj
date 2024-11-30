@@ -1,99 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Admin Dashboard</h1>
-      <nav>
-        <ul>
-          <li><button id="dashboardTab">Dashboard</button></li>
-          <li><button id="configurationTab">Configuration</button></li>
-          <li><button id="usersTab">Users</button></li>
-          <li><button id="auditLogTab">Audit Log</button></li>
-        </ul>
-      </nav>
-    </header>
-    <main>
-      <div class="dashboard-content" id="dashboard">
-        <div class="dashboard-row">
-          <div class="dashboard-item" style="width: 50%;">
-            <h3>Request Rate</h3>
-            <canvas id="requestRateChart" width="500" height="300"></canvas>
-          </div>
-          <div class="dashboard-item" style="width: 50%;">
-            <h3>Anomaly Score Distribution</h3>
-            <canvas id="anomalyScoreChart" width="500" height="300"></canvas>
-          </div>
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-box">
+            <h2>Login</h2>
+            <form id="login-form">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+                <div id="login-error" class="error"></div>
+            </form>
         </div>
-        <div class="dashboard-row">
-          <div class="dashboard-item" style="width: 25%;">
-            <h3>Model Performance</h3>
-            <table id="modelPerformanceTable"></table>
-          </div>
-          <div class="dashboard-item" style="width: 75%;">
-            <h3>Recent Alerts</h3>
-            <table id="recentAlertsTable">
-              <thead>
-                <tr>
-                  <th>Timestamp</th>
-                  <th>Method</th>
-                  <th>Payload</th>
-                  <th>Confidence</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <div class="configuration-content hidden" id="configuration">
-        <h2>Configuration</h2>
-        <div class="configuration-item">
-          <h3>Alert Thresholds</h3>
-          <form id="alertThresholdForm">
-            <div>
-              <label for="anomalyScoreThreshold">Anomaly Score Threshold</label>
-              <input type="number" id="anomalyScoreThreshold" name="anomalyScoreThreshold" step="0.01" value="0.90" required>
+    </div>
+
+    <div class="container" id="main-content">
+        <header>
+            <h1>Admin Dashboard</h1>
+            <nav>
+                <ul>
+                    <li><button id="dashboardTab">Dashboard</button></li>
+                    <li><button id="configurationTab">Configuration</button></li>
+                    <li><button id="usersTab">Users</button></li>
+                    <li><button id="auditLogTab">Audit Log</button></li>
+                    <li><button id="logoutButton" class="logout-button">Logout</button></li>
+                </ul>
+            </nav>
+        </header>
+        
+        <main>
+            <div class="dashboard-content" id="dashboard">
+                <div class="dashboard-row">
+                    <div class="dashboard-item" style="width: 50%;">
+                        <h3>Request Rate</h3>
+                        <canvas id="requestRateChart" width="500" height="300"></canvas>
+                    </div>
+                    <div class="dashboard-item" style="width: 50%;">
+                        <h3>Anomaly Score Distribution</h3>
+                        <canvas id="anomalyScoreChart" width="500" height="300"></canvas>
+                    </div>
+                </div>
+                <div class="dashboard-row">
+                    <div class="dashboard-item" style="width: 25%;">
+                        <h3>Model Performance</h3>
+                        <table id="modelPerformanceTable"></table>
+                    </div>
+                    <div class="dashboard-item" style="width: 75%;">
+                        <h3>Recent Alerts</h3>
+                        <table id="recentAlertsTable">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Method</th>
+                                    <th>Payload</th>
+                                    <th>Confidence</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-            <div>
-              <label for="requestRateThreshold">Request Rate Threshold</label>
-              <input type="number" id="requestRateThreshold" name="requestRateThreshold" step="10" value="100" required>
+
+            <div class="configuration-content hidden" id="configuration">
+                <h2>Configuration</h2>
+                <div class="configuration-item">
+                    <h3>Alert Thresholds</h3>
+                    <form id="alertThresholdForm">
+                        <div>
+                            <label for="anomalyScoreThreshold">Anomaly Score Threshold</label>
+                            <input type="number" id="anomalyScoreThreshold" name="anomalyScoreThreshold" step="0.01" value="0.90" required>
+                        </div>
+                        <div>
+                            <label for="requestRateThreshold">Request Rate Threshold</label>
+                            <input type="number" id="requestRateThreshold" name="requestRateThreshold" step="10" value="100" required>
+                        </div>
+                        <button type="submit" id="saveThresholdsButton">Save Thresholds</button>
+                    </form>
+                </div>
             </div>
-            <button type="submit" id="saveThresholdsButton">Save Thresholds</button>
-          </form>
-        </div>        
-      </div>
-      <div class="users-content hidden" id="users">
-        <h2>Users</h2>
-        <table id="usersTable"></table>
-        <div id="userModal" class="modal"></div>
-      </div>
-      <div class="audit-log-content hidden" id="auditLog">
-        <h2>Audit Log</h2>
-        <table id="auditLogTable">
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>Event</th>
-              <th>Details</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </main>
-    <footer>
-      <p>&copy; AI5063 Project</p>
-    </footer>
-  </div>
-  <script src="script.js"></script>
+
+            <div class="users-content hidden" id="users">
+                <h2>Users</h2>
+                <table id="usersTable"></table>
+                <div id="userModal" class="modal"></div>
+            </div>
+
+            <div class="audit-log-content hidden" id="auditLog">
+                <h2>Audit Log</h2>
+                <table id="auditLogTable">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Event</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; AI5063 Project</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
