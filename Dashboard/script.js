@@ -1,16 +1,6 @@
-function getISTTimestamp() {
-    const now = new Date();
+let currentAnomalyScoreThreshold = 0.90;
+let currentRequestRateThreshold = 100;
 
-    const utcTime = now.getTime();
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istTime = new Date(utcTime + istOffset);
-    return istTime.toISOString().slice(0, 19).replace('T', ' ');
-}
-
-let currentAnomalyScoreThreshold = 0.90; // Default value
-let currentRequestRateThreshold = 100; // Default value
-
-// Check if values exist in localStorage and update them
 function loadThresholdsFromStorage() {
     const storedAnomalyScoreThreshold = localStorage.getItem('anomalyScoreThreshold');
     const storedRequestRateThreshold = localStorage.getItem('requestRateThreshold');
@@ -24,18 +14,15 @@ function loadThresholdsFromStorage() {
     }
 }
 
-// Save updated values to localStorage
 function saveThresholdsToStorage() {
     localStorage.setItem('anomalyScoreThreshold', currentAnomalyScoreThreshold);
     localStorage.setItem('requestRateThreshold', currentRequestRateThreshold);
 }
 
-// Global variables for charts and data
 let currentTab = 'dashboard';
 let requestRateChart, anomalyScoreChart;
 let sampleData = [];
 
-// Function to fetch data and update the dashboard
 async function fetchAndUpdateData() {
     try {
         const file = 'results.csv';
@@ -49,18 +36,15 @@ async function fetchAndUpdateData() {
     }
 }
 
-// Function to parse CSV data
 async function readCSV(file) {
     const response = await fetch(file);
     const csvText = await response.text();
     return parseCSV(csvText);
 }
 
-// Parse CSV text into an array of objects
 function parseCSV(csvText) {
     const lines = csvText.trim().split('\n');
     
-    // Skip the header line and process each subsequent line
     return lines.slice(1).map(line => {
         const [
             Method, URL, Cookie, ContentLen, Payload, ReqLen, ArgLen, NumArgs, NumDigitsArgs, 
@@ -68,7 +52,6 @@ function parseCSV(csvText) {
             Content_present, IP, timestamp, predicted_class, target_class, predicted_prob
         ] = line.split(',');
 
-        // Parse features into an object
         const features = {
             Method: parseInt(Method.trim(), 10),
             URL: URL.trim(),
@@ -98,20 +81,17 @@ function parseCSV(csvText) {
     });
 }
 
-// Function to display the selected tab
 function displayTab(tab) {
     document.querySelectorAll('main > div').forEach(content => content.classList.add('hidden'));
     document.getElementById(tab).classList.remove('hidden');
     currentTab = tab;
 }
 
-// Tab Navigation Event Listeners
 document.getElementById('dashboardTab').addEventListener('click', () => displayTab('dashboard'));
 document.getElementById('configurationTab').addEventListener('click', () => displayTab('configuration'));
 document.getElementById('usersTab').addEventListener('click', () => displayTab('users'));
 document.getElementById('auditLogTab').addEventListener('click', () => displayTab('auditLog'));
 
-// Dashboard Functions
 function updateRequestRateChart(requestRateThreshold) {
     const ctx = document.getElementById('requestRateChart').getContext('2d');
     
@@ -119,14 +99,14 @@ function updateRequestRateChart(requestRateThreshold) {
     const firstTimestamp = new Date(sampleData[0].timestamp);
     const lastTimestamp = new Date(sampleData[sampleData.length - 1].timestamp);
 
-    const startTime = new Date(firstTimestamp.getTime() - 5 * 60000); // 5 minutes before
-    const endTime = new Date(lastTimestamp.getTime() + 5 * 60000); // 5 minutes after
+    const startTime = new Date(firstTimestamp.getTime() - 3 * 60000);
+    const endTime = new Date(lastTimestamp.getTime() + 3 * 60000);
     const timeIntervals = [];
     for (let time = startTime; time <= endTime; time.setMinutes(time.getMinutes() + 1)) {
-        timeIntervals.push(new Date(time)); // Add the time interval to the array
+        timeIntervals.push(new Date(time));
     }
     const attackCounts = timeIntervals.map(interval => {
-        const endInterval = new Date(interval.getTime() + 60000); // Next minute interval
+        const endInterval = new Date(interval.getTime() + 60000);
         return sampleData.filter(item => {
             const timestamp = new Date(item.timestamp);
             return timestamp >= interval && timestamp < endInterval;
@@ -176,7 +156,6 @@ function updateRequestRateChart(requestRateThreshold) {
                         beginAtZero: true
                     }
                 },
-                // Draw the dotted line in the beforeDraw hook
                 plugins: {
                     beforeDraw: function (chart) {
                         const ctx = chart.ctx;
@@ -199,11 +178,19 @@ function updateRequestRateChart(requestRateThreshold) {
     }
 }
 
-// Helper function to format time as HH:mm
 function formatTime(date) {
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
+}
+
+function getISTTimestamp() {
+    const now = new Date();
+
+    const utcTime = now.getTime();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istTime = new Date(utcTime + istOffset);
+    return istTime.toISOString().slice(0, 19).replace('T', ' ');
 }
 
 function updateAnomalyScoreChart() {
@@ -266,7 +253,7 @@ function updateRecentAlertsTable(anomalyScoreThreshold) {
     const tableBody = document.getElementById('recentAlertsTable').getElementsByTagName('tbody')[0];
     tableBody.innerHTML = '';
 
-    const filteredData = sampleData.filter(item => item.predictedClass === 1 && item.predictedProb >= anomalyScoreThreshold).slice(0, 5);
+    const filteredData = sampleData.filter(item => item.predictedClass === 1 && item.predictedProb >= anomalyScoreThreshold).slice(-5).reverse();
 
     filteredData.forEach(item => {
         const timestamp = item.timestamp;
@@ -287,24 +274,6 @@ function updateRecentAlertsTable(anomalyScoreThreshold) {
             <td class="${statusClass}">${status}</td>
         `;
         tableBody.appendChild(row);
-    });
-}
-
-function updateAuditLogTable() {
-    const timestamp = getISTTimestamp();
-    const table = document.getElementById('auditLogTable');
-    table.innerHTML = '';
-    const logs = [
-        { timestamp: timestamp, event: 'Login', details: 'Admin Logged In' }
-    ];
-    logs.forEach(log => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${log.timestamp}</td>
-            <td>${log.event}</td>
-            <td>${log.details}</td>
-        `;
-        table.appendChild(tr);
     });
 }
 
@@ -362,10 +331,9 @@ function handleAlertThresholdSave(event) {
     saveThresholdsToStorage();
     updateRecentAlertsTable(currentAnomalyScoreThreshold);
     updateRequestRateChart(currentRequestRateThreshold);
-    addAuditLogEntry('Configuration', 'Admin Changed Alert Thresholds');
+    addAuditLogEntry('Configuration', `Admin Changed Alert Thresholds`);
 }
 
-// Users Tab Functions
 function updateUsersTable() {
     const table = document.getElementById('usersTable');
     table.innerHTML = '';
@@ -384,7 +352,6 @@ function updateUsersTable() {
     });
 }
 
-// Model Performance Table Update
 function updateModelPerformanceTable() {
     const table = document.getElementById('modelPerformanceTable');
     table.innerHTML = '';
@@ -435,12 +402,10 @@ function getBarColor(value) {
     return '#00FF00';
 }
 
-// Initialize Dashboard
 async function initializeDashboard() {
     loadThresholdsFromStorage();
     updateAlertThresholdForm();
     updateUsersTable();
-    updateAuditLogTable();
 
     await fetchAndUpdateData();
     setInterval(async () => {
@@ -453,6 +418,85 @@ async function initializeDashboard() {
         }
     }, 3000);
 }
-document.addEventListener("DOMContentLoaded", function() {
-    initializeDashboard();
+
+document.addEventListener("DOMContentLoaded", function () {
+    const loginOverlay = document.getElementById('login-overlay');
+    const mainContent = document.getElementById('main-content');
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const logoutButton = document.getElementById('logoutButton');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+
+    const validCredentials = [
+        { id: 1, username: 'admin', password: 'admin', role: 'Admin' },
+        { id: 2, username: 'user1', password: 'user1', role: 'User1' }
+    ];
+
+    function centerLoginOverlay() {
+        loginOverlay.style.position = 'fixed';
+        loginOverlay.style.top = '50%';
+        loginOverlay.style.left = '50%';
+        loginOverlay.style.transform = 'translate(-50%, -50%)';
+    }
+
+    function clearLoginError() {
+        loginError.textContent = '';
+    }
+
+    function isUserLoggedIn() {
+        return localStorage.getItem('isLoggedIn') === 'true';
+    }
+
+    function showLogin() {
+        centerLoginOverlay();
+        loginOverlay.style.display = 'flex';
+        mainContent.classList.add('blurred');
+        clearLoginError();
+    }
+
+    function hideLogin() {
+        loginOverlay.style.display = 'none';
+        mainContent.classList.remove('blurred');
+    }
+
+    async function initializeAfterLogin() {
+        if (!isUserLoggedIn()) return;
+        hideLogin();
+        initializeDashboard();
+    }
+
+    loginForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const username = usernameInput.value;
+        const password = passwordInput.value;
+
+        clearLoginError();
+
+        const validUser = validCredentials.find(
+            cred => cred.username === username && cred.password === password
+        );
+
+        if (validUser) {
+            localStorage.setItem('isLoggedIn', 'true');
+            addAuditLogEntry('Login', `${validUser.role} Logged In`);
+            initializeAfterLogin();
+        } else {
+            loginError.textContent = 'Invalid credentials. Please try again.';
+        }
+
+        usernameInput.value = '';
+        passwordInput.value = '';
+    });
+
+    logoutButton.addEventListener('click', () => {
+        localStorage.setItem('isLoggedIn', 'false');
+        showLogin();
+    });
+
+    if (isUserLoggedIn()) {
+        initializeAfterLogin();
+    } else {
+        showLogin();
+    }
 });
